@@ -39,6 +39,7 @@ func probe(addr string, ret chan string) {
 
 func main() {
     queue := make(chan string, 256)
+    // https://ipinfo.io/AS680/131.173.0.0/16
     for i := 0; i < 256; i++ {
         addr := fmt.Sprintf("131.173.168.%d:80", i)
         //addr := fmt.Sprintf("141.100.10.%d:80", i)
