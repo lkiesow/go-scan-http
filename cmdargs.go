@@ -8,19 +8,23 @@ import "regexp"
 import "errors"
 
 type scanrange struct {
-    bytes [4][2]uint8
+    bytes [4][2]int
     ports []int
 }
 
-func parsePorts(args []string) []int {
+func parsePorts(args []string) ([]int, error) {
     if len(args) == 0 {
-        return []int{80}
+        return []int{80}, nil
     }
     ports := make([]int, len(args))
     for i, port := range args {
-        ports[i], _ = strconv.Atoi(port)
+        iport, err := strconv.Atoi(port)
+        if err != nil {
+            return []int{}, err
+        }
+        ports[i] = iport
     }
-    return ports
+    return ports, nil
 }
 
 func parseRangeString(args []string) (scanrange, error) {
@@ -50,13 +54,13 @@ func parseRangeString(args []string) (scanrange, error) {
         high--
     }
     for i := 3; i >= 0; i-- {
-        scan.bytes[i][0] = uint8(low & 255)
-        scan.bytes[i][1] = uint8(high & 255)
+        scan.bytes[i][0] = int(low & 255)
+        scan.bytes[i][1] = int(high & 255)
         low >>= 8
         high >>= 8
     }
 
-    scan.ports = parsePorts(args[1:])
+    scan.ports, _ = parsePorts(args[1:])
 
     return scan, nil
 }
@@ -74,18 +78,18 @@ func parseRangeArgs(args []string) (scanrange, error) {
             scan.bytes[i][1] = 254
         } else {
             byterange := strings.SplitN(args[i], "-", 2)
-            val, _ := strconv.ParseUint(byterange[0], 10, 8)
-            scan.bytes[i][0] = uint8(val)
+            val, _ := strconv.Atoi(byterange[0])
+            scan.bytes[i][0] = val
             if len(byterange) == 1 {
                 scan.bytes[i][1] = scan.bytes[i][0]
             } else {
-                val, _ := strconv.ParseUint(byterange[1], 10, 8)
-                scan.bytes[i][1] = uint8(val)
+                val, _ := strconv.Atoi(byterange[1])
+                scan.bytes[i][1] = val
             }
         }
     }
 
-    scan.ports = parsePorts(args[4:])
+    scan.ports, _ = parsePorts(args[4:])
 
     return scan, nil
 }
