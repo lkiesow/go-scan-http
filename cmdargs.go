@@ -127,13 +127,22 @@ func parseRangeArgs(args []string) (scanrange, error) {
             }
         } else {
             byterange := strings.SplitN(args[i], "-", 2)
-            val, _ := strconv.Atoi(byterange[0])
+            val, err := strconv.Atoi(byterange[0])
+            if err != nil {
+                return scan, fmt.Errorf("Invalid port number %s", byterange[0])
+            }
             scan.bytes[i][0] = val
             if len(byterange) == 1 {
                 scan.bytes[i][1] = scan.bytes[i][0]
             } else {
-                val, _ := strconv.Atoi(byterange[1])
+                val, err := strconv.Atoi(byterange[1])
+                if err != nil {
+                    return scan, fmt.Errorf("Invalid port number %s", byterange[0])
+                }
                 scan.bytes[i][1] = val
+            }
+            if scan.bytes[i][1] > 255 || scan.bytes[i][0] > scan.bytes[i][1] {
+                return scan, errors.New("Invalid port number")
             }
         }
     }
