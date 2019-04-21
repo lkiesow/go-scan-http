@@ -61,3 +61,38 @@ func TestParsePorts(t *testing.T) {
         t.Errorf("Expected error but got result %v", result)
     }
 }
+
+func TestParseRangeString(t *testing.T) {
+
+    cases := []struct {
+		input []string
+        expected [4][2]int
+	}{
+		{[]string{"127.0.0.0/24"},
+         [4][2]int{{127, 127}, {0, 0}, {0, 0}, {1, 254}}},
+		{[]string{"127.0.0.0/24", "8081"},
+         [4][2]int{{127, 127}, {0, 0}, {0, 0}, {1, 254}}},
+		{[]string{"127.0.0.0/16", "8081"},
+         [4][2]int{{127, 127}, {0, 0}, {0, 255}, {1, 254}}},
+	}
+	for _, testcase := range cases {
+        result, err := parseRangeString(testcase.input)
+        if err != nil || result.bytes != testcase.expected {
+            t.Errorf("Expected %v but got %v", testcase.expected, result.bytes)
+        }
+    }
+
+    errorcases := [][]string{
+		[]string{},
+		[]string{"127.0.0.0"},
+		[]string{"127.0.0.0/33"},
+    }
+	for _, testcase := range errorcases {
+        result, err := parseRangeString(testcase)
+        if err == nil {
+            t.Errorf("Expected error but got result %v for input %v",
+                     result, testcase)
+        }
+    }
+
+}

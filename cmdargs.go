@@ -77,6 +77,9 @@ func parseRangeString(args []string) (scanrange, error) {
         addr |= b
     }
     mask, _ := strconv.ParseUint(parts[5], 10, 32)
+    if mask >= 32 {
+        return scan, errors.New("Mask mmust be < 32")
+    }
     var mask_h uint64 = (1 << (32 - mask)) - 1
     var mask_l uint64 = ((1 << 32) - 1) ^ mask_h
     low := addr & mask_l + 1
