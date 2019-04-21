@@ -143,7 +143,8 @@ func parseRangeArgs(args []string) (scanrange, error) {
 // usage prints the usage information for go-scan-http
 func usage() {
     fmt.Printf("Usage: %s addr-range | [b1 ... b4]  [ports ...]\n\n", os.Args[0])
-    fmt.Println("addr-range")
+    fmt.Println("go-scan-http -- Fast http network scanner")
+    fmt.Println("\naddr-range")
     fmt.Println("  Address range specification as single string in the form")
     fmt.Println("  b1.b2.b3.b4/mask. E.g. `192.168.1.0/24`")
     fmt.Println("b[1-4]")
