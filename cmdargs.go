@@ -1,17 +1,22 @@
 package main
 
-import "os"
-import "fmt"
-import "strconv"
-import "strings"
-import "regexp"
-import "errors"
+import (
+    "errors"
+    "fmt"
+    "os"
+    "regexp"
+    "strconv"
+    "strings"
+)
 
 type scanrange struct {
     bytes [4][2]int
     ports []int
 }
 
+// parsePorts takes a slice of string command line arguments and converts those
+// to a slice of ports represented as integers. If no arguments are passed to
+// this method, a default of port 80 is returned.
 func parsePorts(args []string) ([]int, error) {
     if len(args) == 0 {
         return []int{80}, nil
@@ -27,6 +32,14 @@ func parsePorts(args []string) ([]int, error) {
     return ports, nil
 }
 
+// parseRangeString takes the command line arguments as slice of strings,
+// expecting the first argument to be a specification of an IP address range in
+// the form b0.b1.b2.b3/mask (e.g. 192.168.1.0/24).
+//
+// Additional arguments are parsed as ports.
+//
+// The method returns a scanrange struct, specifying a rage of IP addresses and
+// a list of ports.
 func parseRangeString(args []string) (scanrange, error) {
     scan := scanrange{}
 
@@ -65,6 +78,16 @@ func parseRangeString(args []string) (scanrange, error) {
     return scan, nil
 }
 
+// parseRangeArgs takes the command line arguments as slice of strings,
+// expecting the first four arguments to be a specification of a IP addresses.
+// For example:
+//
+//     192 168 0-1 *
+//
+// Additional arguments are parsed as ports.
+//
+// The method returns a scanrange struct, specifying a rage of IP addresses and
+// a list of ports.
 func parseRangeArgs(args []string) (scanrange, error) {
     scan := scanrange{}
 
@@ -74,8 +97,13 @@ func parseRangeArgs(args []string) (scanrange, error) {
 
     for i := 0; i < 4; i++ {
         if args[i] == "*" {
-            scan.bytes[i][0] = 1
-            scan.bytes[i][1] = 254
+            if i < 3 {
+                scan.bytes[i][0] = 0
+                scan.bytes[i][1] = 255
+            } else {
+                scan.bytes[i][0] = 1
+                scan.bytes[i][1] = 254
+            }
         } else {
             byterange := strings.SplitN(args[i], "-", 2)
             val, _ := strconv.Atoi(byterange[0])
@@ -94,6 +122,7 @@ func parseRangeArgs(args []string) (scanrange, error) {
     return scan, nil
 }
 
+// usage prints the usage information for go-scan-http
 func usage() {
     fmt.Printf("Usage: %s addr-range | [b1 ... b4]  [ports ...]\n\n", os.Args[0])
     fmt.Println("addr-range")
@@ -115,6 +144,8 @@ func usage() {
     os.Exit(0)
 }
 
+// parseArgs reads the command line arguments and passes them to the correct
+// methods for paring the IP range information and ports.
 func parseArgs() scanrange {
     args := os.Args[1:]
     scan, err := parseRangeString(args)

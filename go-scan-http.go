@@ -1,3 +1,6 @@
+// go-scan-http scans a range of IPv4 addresses for HTTP servers by sending a
+// simple, short request and listening for any kind of answer. It keeps the
+// response header for further investigation.
 package main
 
 import "net"
@@ -10,6 +13,10 @@ var REQ_END []byte = []byte("\r\n\r\n")
 const TIMEOUT time.Duration = 5 * time.Second
 const THREADS int = 512
 
+// probe takes a single IPv4 address and sends a simple HTTP request to this
+// address. The resulting HTTP header or error is written to the ret channel.
+// Upon completion, one value is removed from the maxqueue channel to indicate
+// that another request can be launched.
 func probe(addr string, ret chan string, maxqueue chan bool) {
     d := net.Dialer{Timeout: TIMEOUT}
     conn, err := d.Dial("tcp", addr)
@@ -40,31 +47,33 @@ func probe(addr string, ret chan string, maxqueue chan bool) {
     ret <- header
 }
 
-func handleResults(num int, queue chan string, done chan bool) {
+// handleResults reads and prints the number of results defined by num from the
+// results channel and writes a single value to the done channel once it is
+// finished.
+func handleResults(num int, results chan string, done chan bool) {
     for i := 0; i < num; i++ {
-        addr := <-queue
+        addr := <-results
         fmt.Println(addr)
     }
     done <- true
 }
 
-// https://ipinfo.io/AS680/131.173.0.0/16
+// main is the entry point for the executable.
 func main() {
     scan := parseArgs()
 
-    fmt.Println(scan)
-
-    queue := make(chan string, THREADS)
+    results := make(chan string, THREADS)
     maxqueue := make(chan bool, THREADS)
     done := make(chan bool, 1)
 
     // result handler
-    n_requests := 1
+    n_requests := len(scan.ports)
     for i := 0; i < 4; i++ {
         n_requests *= 1 + int(scan.bytes[i][1]) - int(scan.bytes[i][0])
     }
-    fmt.Println(n_requests)
-    go handleResults(n_requests, queue, done)
+
+    // initialize result handler
+    go handleResults(n_requests, results, done)
 
     // launch requests
     for b0 := scan.bytes[0][0]; b0 <= scan.bytes[0][1]; b0++ {
@@ -75,7 +84,7 @@ func main() {
                         addr := fmt.Sprintf("%d.%d.%d.%d:%d",
                                             b0, b1, b2, b3, port)
                         maxqueue <- true
-                        go probe(addr, queue, maxqueue)
+                        go probe(addr, results, maxqueue)
                     }
                 }
             }
