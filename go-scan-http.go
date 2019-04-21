@@ -1,12 +1,33 @@
+/*
+go-scan-http -- Fast http network scanner
+Copyright (C) 2019 Lars Kiesow <lkiesow@uos.de>
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+
 // go-scan-http scans a range of IPv4 addresses for HTTP servers by sending a
 // simple, short request and listening for any kind of answer. It keeps the
 // response header for further investigation.
 package main
 
-import "net"
-import "fmt"
-import "bufio"
-import "time"
+import (
+    "net"
+    "fmt"
+    "bufio"
+    "time"
+)
 
 var REQ_BEGIN []byte = []byte("HEAD / HTTP/1.1\r\nHost:")
 var REQ_END []byte = []byte("\r\n\r\n")
