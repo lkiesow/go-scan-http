@@ -70,7 +70,7 @@ func parseRangeString(args []string) (scanrange, error) {
         return scan, errors.New("Invalid range argument")
     }
     parts := re.FindStringSubmatch(args[0])
-    var addr uint64 = 0
+    var addr uint64
     for _, part := range parts[1:5] {
         b, _ := strconv.ParseUint(part, 10, 32)
         addr <<= 8
@@ -80,10 +80,10 @@ func parseRangeString(args []string) (scanrange, error) {
     if mask >= 32 {
         return scan, errors.New("Mask mmust be < 32")
     }
-    var mask_h uint64 = (1 << (32 - mask)) - 1
-    var mask_l uint64 = ((1 << 32) - 1) ^ mask_h
-    low := addr & mask_l + 1
-    high := addr | mask_h
+    var maskH uint64 = (1 << (32 - mask)) - 1
+    var maskL uint64 = ((1 << 32) - 1) ^ maskH
+    low := addr & maskL + 1
+    high := addr | maskH
     if (high & 255) == 255 {
         high--
     }
