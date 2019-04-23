@@ -30,6 +30,7 @@ import (
 type settings struct {
     bytes [4][2]int
     ports []int
+    threads int
 }
 
 // parsePorts takes a slice of string command line arguments and converts those
@@ -150,7 +151,8 @@ func parseRangeArgs(settings settings, args []string) (settings, error) {
 
 // usage prints the usage information for go-scan-http
 func usage() {
-    fmt.Printf("Usage: %s addr-range | [b1 ... b4]  [ports ...]\n\n", os.Args[0])
+    fmt.Printf("Usage: %s [options] addr-range | [b1 ... b4]  [ports ...]\n\n",
+               os.Args[0])
     fmt.Println("go-scan-http -- Fast http network scanner")
     fmt.Println("\naddr-range")
     fmt.Println("  Address range specification as single string in the form")
@@ -162,6 +164,9 @@ func usage() {
     fmt.Println("ports")
     fmt.Println("  List of ports to scan.")
     fmt.Println("  This defaults to 80.")
+    fmt.Println("\nOptions")
+    fmt.Println("-t <number of threads>")
+    fmt.Println("  The number of parallel requests (default: 512)")
     fmt.Println("\nExample")
     fmt.Println("  Scan a 192.168.1.0/24 network for ports 80 and 8080.")
     fmt.Println("  All these forms are equivalent.")
@@ -171,12 +176,37 @@ func usage() {
     os.Exit(0)
 }
 
+// parseOptions extracts known options from the given command line arguments.
+func parseOptions(settings settings, args []string) (settings, []string, error) {
+    for len(args) > 1 && len(args[0]) > 1 && args[0][0] == '-' {
+        switch args[0] {
+        case "-t":
+            threads, err := strconv.Atoi(args[1])
+            if err != nil {
+                return settings, args, err
+            }
+            settings.threads = threads
+        default:
+            return settings, args, errors.New("Unknown option " + args[0])
+        }
+        args = args[2:]
+    }
+    return settings, args, nil
+}
+
 // parseArgs reads the command line arguments and passes them to the correct
 // methods for paring the IP range information and ports.
 func parseArgs() settings {
     args := os.Args[1:]
-    settings := settings{}
-    settings, err := parseRangeString(settings, args)
+    settings := settings{threads: 512}
+
+    // parse options
+    settings, args, err := parseOptions(settings, args)
+    if err != nil {
+        usage()
+    }
+
+    settings, err = parseRangeString(settings, args)
     if err != nil {
         settings, err = parseRangeArgs(settings, args)
     }

@@ -32,7 +32,6 @@ import (
 var REQ_BEGIN []byte = []byte("HEAD / HTTP/1.1\r\nHost:")
 var REQ_END []byte = []byte("\r\n\r\n")
 const TIMEOUT time.Duration = 5 * time.Second
-const THREADS int = 512
 
 // probe takes a single IPv4 address and sends a simple HTTP request to this
 // address. The resulting HTTP header or error is written to the ret channel.
@@ -83,8 +82,8 @@ func handleResults(num int, results chan string, done chan bool) {
 func main() {
     settings := parseArgs()
 
-    results := make(chan string, THREADS)
-    maxqueue := make(chan bool, THREADS)
+    results := make(chan string, settings.threads)
+    maxqueue := make(chan bool, settings.threads)
     done := make(chan bool, 1)
 
     // result handler
