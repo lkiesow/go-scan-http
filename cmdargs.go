@@ -27,7 +27,7 @@ import (
     "strings"
 )
 
-type scanrange struct {
+type settings struct {
     bytes [4][2]int
     ports []int
 }
@@ -56,18 +56,16 @@ func parsePorts(args []string) ([]int, error) {
 //
 // Additional arguments are parsed as ports.
 //
-// The method returns a scanrange struct, specifying a rage of IP addresses and
+// The method returns a settings struct, specifying a rage of IP addresses and
 // a list of ports.
-func parseRangeString(args []string) (scanrange, error) {
-    scan := scanrange{}
-
+func parseRangeString(settings settings, args []string) (settings, error) {
     if len(args) == 0 {
-        return scan, errors.New("Not enough arguments")
+        return settings, errors.New("Not enough arguments")
     }
 
     re := regexp.MustCompile(`^([0-9]+)\.([0-9]+)\.([0-9]+)\.([0-9]+)/([0-9]+)$`)
     if !re.MatchString(args[0]) {
-        return scan, errors.New("Invalid range argument")
+        return settings, errors.New("Invalid range argument")
     }
     parts := re.FindStringSubmatch(args[0])
     var addr uint64
@@ -78,7 +76,7 @@ func parseRangeString(args []string) (scanrange, error) {
     }
     mask, _ := strconv.ParseUint(parts[5], 10, 32)
     if mask >= 32 {
-        return scan, errors.New("Mask mmust be < 32")
+        return settings, errors.New("Mask mmust be < 32")
     }
     var maskH uint64 = (1 << (32 - mask)) - 1
     var maskL uint64 = ((1 << 32) - 1) ^ maskH
@@ -88,15 +86,15 @@ func parseRangeString(args []string) (scanrange, error) {
         high--
     }
     for i := 3; i >= 0; i-- {
-        scan.bytes[i][0] = int(low & 255)
-        scan.bytes[i][1] = int(high & 255)
+        settings.bytes[i][0] = int(low & 255)
+        settings.bytes[i][1] = int(high & 255)
         low >>= 8
         high >>= 8
     }
 
-    scan.ports, _ = parsePorts(args[1:])
+    settings.ports, _ = parsePorts(args[1:])
 
-    return scan, nil
+    return settings, nil
 }
 
 // parseRangeArgs takes the command line arguments as slice of strings,
@@ -107,49 +105,47 @@ func parseRangeString(args []string) (scanrange, error) {
 //
 // Additional arguments are parsed as ports.
 //
-// The method returns a scanrange struct, specifying a rage of IP addresses and
+// The method returns a settings struct, specifying a rage of IP addresses and
 // a list of ports.
-func parseRangeArgs(args []string) (scanrange, error) {
-    scan := scanrange{}
-
+func parseRangeArgs(settings settings, args []string) (settings, error) {
     if len(args) < 4 {
-        return scan, errors.New("Not enough arguments")
+        return settings, errors.New("Not enough arguments")
     }
 
     for i := 0; i < 4; i++ {
         if args[i] == "*" {
             if i < 3 {
-                scan.bytes[i][0] = 0
-                scan.bytes[i][1] = 255
+                settings.bytes[i][0] = 0
+                settings.bytes[i][1] = 255
             } else {
-                scan.bytes[i][0] = 1
-                scan.bytes[i][1] = 254
+                settings.bytes[i][0] = 1
+                settings.bytes[i][1] = 254
             }
         } else {
             byterange := strings.SplitN(args[i], "-", 2)
             val, err := strconv.Atoi(byterange[0])
             if err != nil {
-                return scan, fmt.Errorf("Invalid port number %s", byterange[0])
+                return settings, fmt.Errorf("Invalid port number %s", byterange[0])
             }
-            scan.bytes[i][0] = val
+            settings.bytes[i][0] = val
             if len(byterange) == 1 {
-                scan.bytes[i][1] = scan.bytes[i][0]
+                settings.bytes[i][1] = settings.bytes[i][0]
             } else {
                 val, err := strconv.Atoi(byterange[1])
                 if err != nil {
-                    return scan, fmt.Errorf("Invalid port number %s", byterange[0])
+                    return settings, fmt.Errorf("Invalid port number %s", byterange[0])
                 }
-                scan.bytes[i][1] = val
+                settings.bytes[i][1] = val
             }
-            if scan.bytes[i][1] > 255 || scan.bytes[i][0] > scan.bytes[i][1] {
-                return scan, errors.New("Invalid port number")
+            if settings.bytes[i][1] > 255 || settings.bytes[i][0] > settings.bytes[i][1] {
+                return settings, errors.New("Invalid port number")
             }
         }
     }
 
-    scan.ports, _ = parsePorts(args[4:])
+    settings.ports, _ = parsePorts(args[4:])
 
-    return scan, nil
+    return settings, nil
 }
 
 // usage prints the usage information for go-scan-http
@@ -177,14 +173,15 @@ func usage() {
 
 // parseArgs reads the command line arguments and passes them to the correct
 // methods for paring the IP range information and ports.
-func parseArgs() scanrange {
+func parseArgs() settings {
     args := os.Args[1:]
-    scan, err := parseRangeString(args)
+    settings := settings{}
+    settings, err := parseRangeString(settings, args)
     if err != nil {
-        scan, err = parseRangeArgs(args)
+        settings, err = parseRangeArgs(settings, args)
     }
     if err != nil {
         usage()
     }
-    return scan
+    return settings
 }
