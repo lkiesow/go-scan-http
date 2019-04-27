@@ -29,16 +29,16 @@ import (
     "time"
 )
 
-var REQ_BEGIN []byte = []byte("HEAD / HTTP/1.1\r\nHost:")
-var REQ_END []byte = []byte("\r\n\r\n")
-const TIMEOUT time.Duration = 5 * time.Second
+var requestBegin = []byte("HEAD / HTTP/1.1\r\nHost:")
+var requestEnd = []byte("\r\n\r\n")
+const timeout time.Duration = 5 * time.Second
 
 // probe takes a single IPv4 address and sends a simple HTTP request to this
 // address. The resulting HTTP header or error is written to the ret channel.
 // Upon completion, one value is removed from the maxqueue channel to indicate
 // that another request can be launched.
 func probe(addr string, ret chan string, maxqueue chan bool) {
-    d := net.Dialer{Timeout: TIMEOUT}
+    d := net.Dialer{Timeout: timeout}
     conn, err := d.Dial("tcp", addr)
     if err != nil {
         ret <- fmt.Sprintf("%s", err)
@@ -47,10 +47,10 @@ func probe(addr string, ret chan string, maxqueue chan bool) {
     }
     defer conn.Close()
     defer func() {<-maxqueue}()
-    conn.SetDeadline(time.Now().Add(TIMEOUT))
-    conn.Write(REQ_BEGIN)
+    conn.SetDeadline(time.Now().Add(timeout))
+    conn.Write(requestBegin)
     conn.Write([]byte(addr))
-    conn.Write(REQ_END)
+    conn.Write(requestEnd)
     reader := bufio.NewReader(conn)
     header := addr + "\n"
     for {
@@ -87,13 +87,13 @@ func main() {
     done := make(chan bool, 1)
 
     // result handler
-    n_requests := len(settings.ports)
+    nRequests := len(settings.ports)
     for i := 0; i < 4; i++ {
-        n_requests *= 1 + int(settings.bytes[i][1]) - int(settings.bytes[i][0])
+        nRequests *= 1 + int(settings.bytes[i][1]) - int(settings.bytes[i][0])
     }
 
     // initialize result handler
-    go handleResults(n_requests, results, done)
+    go handleResults(nRequests, results, done)
 
     // launch requests
     for b0 := settings.bytes[0][0]; b0 <= settings.bytes[0][1]; b0++ {
