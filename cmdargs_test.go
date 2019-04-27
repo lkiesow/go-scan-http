@@ -137,3 +137,39 @@ func TestParseRangeArgs(t *testing.T) {
     }
 
 }
+
+func TestParseOptions(t *testing.T) {
+
+    // test success
+    cases := []struct {
+        input []string
+        threads int
+        length int
+    }{
+        {[]string{"-t", "123", "127.0.0.1/24"}, 123, 1},
+        {[]string{"127.0.0.1/24"}, 0, 1},
+    }
+    for _, testcase := range cases {
+        settings, args, err := parseOptions(settings{}, testcase.input)
+        if err != nil || settings.threads != testcase.threads || len(args) != testcase.length {
+            t.Errorf("Got %v and %v", settings, args)
+        }
+    }
+
+    // test invalid input
+    errorcases := []struct {
+        input []string
+        threads int
+        length int
+    }{
+        {[]string{"-t", "127.0.0.1/24"}, 123, 1},
+        {[]string{"-x", "127.0.0.1/24"}, 0, 1},
+    }
+    for _, testcase := range errorcases {
+        settings, args, err := parseOptions(settings{}, testcase.input)
+        if err == nil {
+            t.Errorf("Expected error but got result %v, args: %v for input %v",
+                     settings, args, testcase)
+        }
+    }
+}
