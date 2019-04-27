@@ -59,7 +59,7 @@ func parsePorts(args []string) ([]int, error) {
 //
 // The method returns a settings struct, specifying a rage of IP addresses and
 // a list of ports.
-func parseRangeString(settings settings, args []string) (settings, error) {
+func parseRangeString(settings *settings, args []string) (*settings, error) {
     if len(args) == 0 {
         return settings, errors.New("Not enough arguments")
     }
@@ -108,7 +108,7 @@ func parseRangeString(settings settings, args []string) (settings, error) {
 //
 // The method returns a settings struct, specifying a rage of IP addresses and
 // a list of ports.
-func parseRangeArgs(settings settings, args []string) (settings, error) {
+func parseRangeArgs(settings *settings, args []string) (*settings, error) {
     if len(args) < 4 {
         return settings, errors.New("Not enough arguments")
     }
@@ -177,7 +177,7 @@ func usage() {
 }
 
 // parseOptions extracts known options from the given command line arguments.
-func parseOptions(settings settings, args []string) (settings, []string, error) {
+func parseOptions(settings *settings, args []string) (*settings, []string, error) {
     for len(args) > 1 && len(args[0]) > 1 && args[0][0] == '-' {
         switch args[0] {
         case "-t":
@@ -201,14 +201,14 @@ func parseArgs() settings {
     settings := settings{threads: 512}
 
     // parse options
-    settings, args, err := parseOptions(settings, args)
+    _, args, err := parseOptions(&settings, args)
     if err != nil {
         usage()
     }
 
-    settings, err = parseRangeString(settings, args)
+    _, err = parseRangeString(&settings, args)
     if err != nil {
-        settings, err = parseRangeArgs(settings, args)
+        _, err = parseRangeArgs(&settings, args)
     }
     if err != nil {
         usage()

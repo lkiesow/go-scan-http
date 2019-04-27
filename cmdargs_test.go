@@ -76,7 +76,7 @@ func TestParseRangeString(t *testing.T) {
          [4][2]int{{127, 127}, {0, 0}, {0, 255}, {1, 254}}},
     }
     for _, testcase := range cases {
-        result, err := parseRangeString(settings{}, testcase.input)
+        result, err := parseRangeString(&settings{}, testcase.input)
         if err != nil || result.bytes != testcase.expected {
             t.Errorf("Expected %v but got %v", testcase.expected, result.bytes)
         }
@@ -88,17 +88,26 @@ func TestParseRangeString(t *testing.T) {
         []string{"127.0.0.0/33"},
     }
     for _, testcase := range errorcases {
-        result, err := parseRangeString(settings{}, testcase)
+        result, err := parseRangeString(&settings{}, testcase)
         if err == nil {
             t.Errorf("Expected error but got result %v for input %v",
                      result, testcase)
         }
     }
 
+    // test that settings are properly modified
+    inputSettings := settings{}
+    inputArgs := []string{"127.0.0.0/24"}
+    parseRangeString(&inputSettings, inputArgs)
+    if inputSettings.bytes[0][0] != 127 {
+        t.Errorf("Expected input settings to be modifed")
+    }
+
 }
 
 func TestParseRangeArgs(t *testing.T) {
 
+    // test parsing valid address ranges
     cases := []struct {
         input []string
         expected [4][2]int
@@ -113,12 +122,13 @@ func TestParseRangeArgs(t *testing.T) {
          [4][2]int{{127, 127}, {2, 3}, {0, 255}, {1, 254}}},
     }
     for _, testcase := range cases {
-        result, err := parseRangeArgs(settings{}, testcase.input)
+        result, err := parseRangeArgs(&settings{}, testcase.input)
         if err != nil || result.bytes != testcase.expected {
             t.Errorf("Expected %v but got %v", testcase.expected, result.bytes)
         }
     }
 
+    // test invalid address ranges
     errorcases := [][]string{
         []string{},
         []string{"127", "0", "0"},
@@ -129,11 +139,19 @@ func TestParseRangeArgs(t *testing.T) {
         []string{"127", "0", "0", "4-3"},
     }
     for _, testcase := range errorcases {
-        result, err := parseRangeArgs(settings{}, testcase)
+        result, err := parseRangeArgs(&settings{}, testcase)
         if err == nil {
             t.Errorf("Expected error but got result %v for input %v",
                      result, testcase)
         }
+    }
+
+    // test that settings are properly modified
+    inputSettings := settings{}
+    inputArgs := []string{"127", "0", "0", "1"}
+    parseRangeArgs(&inputSettings, inputArgs)
+    if inputSettings.bytes[0][0] != 127 {
+        t.Errorf("Expected input settings to be modifed")
     }
 
 }
@@ -150,7 +168,7 @@ func TestParseOptions(t *testing.T) {
         {[]string{"127.0.0.1/24"}, 0, 1},
     }
     for _, testcase := range cases {
-        settings, args, err := parseOptions(settings{}, testcase.input)
+        settings, args, err := parseOptions(&settings{}, testcase.input)
         if err != nil || settings.threads != testcase.threads || len(args) != testcase.length {
             t.Errorf("Got %v and %v", settings, args)
         }
@@ -166,10 +184,19 @@ func TestParseOptions(t *testing.T) {
         {[]string{"-x", "127.0.0.1/24"}, 0, 1},
     }
     for _, testcase := range errorcases {
-        settings, args, err := parseOptions(settings{}, testcase.input)
+        settings, args, err := parseOptions(&settings{}, testcase.input)
         if err == nil {
             t.Errorf("Expected error but got result %v, args: %v for input %v",
                      settings, args, testcase)
         }
     }
+
+    // test settings are properly modified
+    inputSettings := settings{}
+    inputArgs := []string{"-t", "123", "127.0.0.1/24"}
+    parseOptions(&inputSettings, inputArgs)
+    if inputSettings.threads != 123 {
+        t.Errorf("Expected input settings to be modifed")
+    }
+
 }
