@@ -43,13 +43,13 @@ func testEq(a, b []int) bool {
 func TestParsePorts(t *testing.T) {
 
     cases := []struct {
-		input []string
+        input []string
         expected []int
-	}{
-		{[]string{}, []int{80}},
+    }{
+        {[]string{}, []int{80}},
         {[]string{"123", "234"}, []int{123, 234}},
-	}
-	for _, testcase := range cases {
+    }
+    for _, testcase := range cases {
         result, err := parsePorts(testcase.input)
         if err != nil || !testEq(result, testcase.expected) {
             t.Errorf("Expected %v but got %v", testcase.expected, result)
@@ -65,17 +65,17 @@ func TestParsePorts(t *testing.T) {
 func TestParseRangeString(t *testing.T) {
 
     cases := []struct {
-		input []string
+        input []string
         expected [4][2]int
-	}{
-		{[]string{"127.0.0.0/24"},
+    }{
+        {[]string{"127.0.0.0/24"},
          [4][2]int{{127, 127}, {0, 0}, {0, 0}, {1, 254}}},
-		{[]string{"127.0.0.0/24", "8081"},
+        {[]string{"127.0.0.0/24", "8081"},
          [4][2]int{{127, 127}, {0, 0}, {0, 0}, {1, 254}}},
-		{[]string{"127.0.0.0/16", "8081"},
+        {[]string{"127.0.0.0/16", "8081"},
          [4][2]int{{127, 127}, {0, 0}, {0, 255}, {1, 254}}},
-	}
-	for _, testcase := range cases {
+    }
+    for _, testcase := range cases {
         result, err := parseRangeString(settings{}, testcase.input)
         if err != nil || result.bytes != testcase.expected {
             t.Errorf("Expected %v but got %v", testcase.expected, result.bytes)
@@ -83,11 +83,11 @@ func TestParseRangeString(t *testing.T) {
     }
 
     errorcases := [][]string{
-		[]string{},
-		[]string{"127.0.0.0"},
-		[]string{"127.0.0.0/33"},
+        []string{},
+        []string{"127.0.0.0"},
+        []string{"127.0.0.0/33"},
     }
-	for _, testcase := range errorcases {
+    for _, testcase := range errorcases {
         result, err := parseRangeString(settings{}, testcase)
         if err == nil {
             t.Errorf("Expected error but got result %v for input %v",
@@ -100,19 +100,19 @@ func TestParseRangeString(t *testing.T) {
 func TestParseRangeArgs(t *testing.T) {
 
     cases := []struct {
-		input []string
+        input []string
         expected [4][2]int
-	}{
-		{[]string{"127", "0", "0", "*"},
+    }{
+        {[]string{"127", "0", "0", "*"},
          [4][2]int{{127, 127}, {0, 0}, {0, 0}, {1, 254}}},
-		{[]string{"127", "0", "0", "*", "8080"},
+        {[]string{"127", "0", "0", "*", "8080"},
          [4][2]int{{127, 127}, {0, 0}, {0, 0}, {1, 254}}},
-		{[]string{"127", "0", "*", "*", "8080"},
+        {[]string{"127", "0", "*", "*", "8080"},
          [4][2]int{{127, 127}, {0, 0}, {0, 255}, {1, 254}}},
-		{[]string{"127", "2-3", "*", "1-254", "8080"},
+        {[]string{"127", "2-3", "*", "1-254", "8080"},
          [4][2]int{{127, 127}, {2, 3}, {0, 255}, {1, 254}}},
-	}
-	for _, testcase := range cases {
+    }
+    for _, testcase := range cases {
         result, err := parseRangeArgs(settings{}, testcase.input)
         if err != nil || result.bytes != testcase.expected {
             t.Errorf("Expected %v but got %v", testcase.expected, result.bytes)
@@ -120,15 +120,15 @@ func TestParseRangeArgs(t *testing.T) {
     }
 
     errorcases := [][]string{
-		[]string{},
-		[]string{"127", "0", "0"},
-		[]string{"127", "0", "0", "300"},
-		[]string{"127", "0", "0", "-3"},
-		[]string{"127", "0", "a", "1-3"},
-		[]string{"127", "0", "0-b", "-3"},
-		[]string{"127", "0", "0", "4-3"},
+        []string{},
+        []string{"127", "0", "0"},
+        []string{"127", "0", "0", "300"},
+        []string{"127", "0", "0", "-3"},
+        []string{"127", "0", "a", "1-3"},
+        []string{"127", "0", "0-b", "-3"},
+        []string{"127", "0", "0", "4-3"},
     }
-	for _, testcase := range errorcases {
+    for _, testcase := range errorcases {
         result, err := parseRangeArgs(settings{}, testcase)
         if err == nil {
             t.Errorf("Expected error but got result %v for input %v",
