@@ -26,6 +26,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"sync"
 	"time"
 )
 
@@ -65,12 +66,12 @@ func probe(addr string) (string, error) {
 // handleResults reads and prints the number of results defined by num from the
 // results channel and writes a single value to the done channel once it is
 // finished.
-func handleResults(num int, results chan string, done chan bool) {
-	for i := 0; i < num; i++ {
+func handleResults(results <-chan string, waitgroup *sync.WaitGroup) {
+	for {
 		addr := <-results
 		fmt.Println(addr)
+		waitgroup.Done()
 	}
-	done <- true
 }
 
 // main is the entry point for the executable.
@@ -79,16 +80,17 @@ func main() {
 
 	results := make(chan string, settings.threads)
 	maxqueue := make(chan bool, settings.threads)
-	done := make(chan bool, 1)
+	waitgroup := sync.WaitGroup{}
 
 	// result handler
 	nRequests := len(settings.ports)
 	for i := 0; i < 4; i++ {
 		nRequests *= 1 + int(settings.bytes[i][1]) - int(settings.bytes[i][0])
 	}
+	waitgroup.Add(nRequests)
 
 	// initialize result handler
-	go handleResults(nRequests, results, done)
+	go handleResults(results, &waitgroup)
 
 	// launch requests
 	for b0 := settings.bytes[0][0]; b0 <= settings.bytes[0][1]; b0++ {
@@ -115,5 +117,5 @@ func main() {
 	}
 
 	// wait until all messages are handled
-	<-done
+	waitgroup.Wait()
 }
