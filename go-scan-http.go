@@ -79,7 +79,7 @@ func main() {
 	settings := parseArgs()
 
 	results := make(chan string, settings.threads)
-	maxqueue := make(chan bool, settings.threads)
+	maxqueue := make(chan struct{}, settings.threads)
 	waitgroup := sync.WaitGroup{}
 
 	// result handler
@@ -100,7 +100,7 @@ func main() {
 					for _, port := range settings.ports {
 						addr := fmt.Sprintf("%d.%d.%d.%d:%d",
 							b0, b1, b2, b3, port)
-						maxqueue <- true
+						maxqueue <- struct{}{}
 						go func() {
 							header, err := probe(addr)
 							if err != nil {
