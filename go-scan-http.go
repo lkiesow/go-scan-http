@@ -23,6 +23,7 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"net"
 	"time"
@@ -34,19 +35,14 @@ var requestEnd = []byte("\r\n\r\n")
 const timeout time.Duration = 5 * time.Second
 
 // probe takes a single IPv4 address and sends a simple HTTP request to this
-// address. The resulting HTTP header or error is written to the ret channel.
-// Upon completion, one value is removed from the maxqueue channel to indicate
-// that another request can be launched.
-func probe(addr string, ret chan string, maxqueue chan bool) {
+// address. It returns the resulting HTTP header or an error.
+func probe(addr string) (string, error) {
 	d := net.Dialer{Timeout: timeout}
 	conn, err := d.Dial("tcp", addr)
 	if err != nil {
-		ret <- fmt.Sprintf("%s", err)
-		<-maxqueue
-		return
+		return "", err
 	}
 	defer conn.Close()
-	defer func() { <-maxqueue }()
 	conn.SetDeadline(time.Now().Add(timeout))
 	conn.Write(requestBegin)
 	conn.Write([]byte(addr))
@@ -58,13 +54,12 @@ func probe(addr string, ret chan string, maxqueue chan bool) {
 		header += line
 		if len(line) <= 2 {
 			if line == "" {
-				ret <- "read timeout for " + addr
-				return
+				return "", errors.New("read timeout for " + addr)
 			}
 			break
 		}
 	}
-	ret <- header
+	return header, nil
 }
 
 // handleResults reads and prints the number of results defined by num from the
@@ -104,7 +99,15 @@ func main() {
 						addr := fmt.Sprintf("%d.%d.%d.%d:%d",
 							b0, b1, b2, b3, port)
 						maxqueue <- true
-						go probe(addr, results, maxqueue)
+						go func() {
+							header, err := probe(addr)
+							if err != nil {
+								results <- fmt.Sprintf("%s", err)
+							} else {
+								results <- header
+							}
+							<-maxqueue
+						}()
 					}
 				}
 			}
