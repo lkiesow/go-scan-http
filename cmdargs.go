@@ -165,7 +165,7 @@ func usage() {
 	fmt.Println("  List of ports to scan.")
 	fmt.Println("  This defaults to 80.")
 	fmt.Println("\nOptions")
-	fmt.Println("-t <number of threads>")
+	fmt.Println("-n <number of threads>")
 	fmt.Println("  The number of parallel requests (default: 512)")
 	fmt.Println("\nExample")
 	fmt.Println("  Scan a 192.168.1.0/24 network for ports 80 and 8080.")
@@ -180,7 +180,7 @@ func usage() {
 func parseOptions(settings *settings, args []string) (*settings, []string, error) {
 	for len(args) > 1 && len(args[0]) > 1 && args[0][0] == '-' {
 		switch args[0] {
-		case "-t":
+		case "-n":
 			threads, err := strconv.Atoi(args[1])
 			if err != nil {
 				return settings, args, err

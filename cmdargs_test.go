@@ -164,7 +164,7 @@ func TestParseOptions(t *testing.T) {
 		threads int
 		length  int
 	}{
-		{[]string{"-t", "123", "127.0.0.1/24"}, 123, 1},
+		{[]string{"-n", "123", "127.0.0.1/24"}, 123, 1},
 		{[]string{"127.0.0.1/24"}, 0, 1},
 	}
 	for _, testcase := range cases {
@@ -180,7 +180,7 @@ func TestParseOptions(t *testing.T) {
 		threads int
 		length  int
 	}{
-		{[]string{"-t", "127.0.0.1/24"}, 123, 1},
+		{[]string{"-n", "127.0.0.1/24"}, 123, 1},
 		{[]string{"-x", "127.0.0.1/24"}, 0, 1},
 	}
 	for _, testcase := range errorcases {
@@ -193,7 +193,7 @@ func TestParseOptions(t *testing.T) {
 
 	// test settings are properly modified
 	inputSettings := settings{}
-	inputArgs := []string{"-t", "123", "127.0.0.1/24"}
+	inputArgs := []string{"-n", "123", "127.0.0.1/24"}
 	parseOptions(&inputSettings, inputArgs)
 	if inputSettings.threads != 123 {
 		t.Errorf("Expected input settings to be modifed")
